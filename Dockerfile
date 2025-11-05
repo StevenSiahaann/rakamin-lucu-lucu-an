@@ -11,6 +11,12 @@ FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+ARG MONGODB_URI
+ARG MONGODB_DB
+ENV MONGODB_URI=${MONGODB_URI}
+ENV MONGODB_DB=${MONGODB_DB}
+
 RUN npm run build
 # prune devdependencies dari node modules
 RUN npm prune --omit=dev

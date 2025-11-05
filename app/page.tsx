@@ -1,90 +1,136 @@
-import Image from "next/image";
-import Head from "next/head";
+"use client";
 
-export default function Home() {
-  return (
-    <>
-      <Head>
-        <title>Testing Kelompok 3</title>
-        <meta
-          name="description"
-          content="OrangePay - Smart Digital Wallet by BNI"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
+import { useState, useEffect } from "react";
 
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
-        <h1 className="text-4xl font-bold text-orange-600 mb-4">
-          Welcome to Kelompok 3
-        </h1>
-        <p className="text-gray-700 text-lg text-center max-w-lg">
-          Yay Deploy 3
-        </p>
-      </main>
-    </>
-  );
+interface Note {
+  _id: string;
+  text: string;
+  createdAt: string;
 }
 
-// export default function Home() {
-//   return (
-//     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-//       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-//         <Image
-//           className="dark:invert"
-//           src="/next.svg"
-//           alt="Next.js logo"
-//           width={100}
-//           height={20}
-//           priority
-//         />
-//         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-//           <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-//             To get started, edit the page.tsx file.
-//           </h1>
-//           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-//             Looking for a starting point or more instructions? Head over to{" "}
-//             <a
-//               href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-//               className="font-medium text-zinc-950 dark:text-zinc-50"
-//             >
-//               Templates
-//             </a>{" "}
-//             or the{" "}
-//             <a
-//               href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-//               className="font-medium text-zinc-950 dark:text-zinc-50"
-//             >
-//               Learning
-//             </a>{" "}
-//             center.
-//           </p>
-//         </div>
-//         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-//           <a
-//             className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-//             href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-//             target="_blank"
-//             rel="noopener noreferrer"
-//           >
-//             <Image
-//               className="dark:invert"
-//               src="/vercel.svg"
-//               alt="Vercel logomark"
-//               width={16}
-//               height={16}
-//             />
-//             Deploy Now
-//           </a>
-//           <a
-//             className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-//             href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-//             target="_blank"
-//             rel="noopener noreferrer"
-//           >
-//             Documentation
-//           </a>
-//         </div>
-//       </main>
-//     </div>
-//   );
-// }
+export default function Home() {
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [newNote, setNewNote] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchNotes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch("/api/notes");
+      const result = await res.json();
+
+      if (result.success) {
+        setNotes(result.data);
+      } else {
+        setError(result.error || "Failed to fetch notes");
+      }
+    } catch (err) {
+      setError("An error occurred while fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotes();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newNote.trim() === "") return;
+
+    try {
+      const res = await fetch("/api/notes", {
+        // Memanggil API route
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: newNote }),
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        setNotes([result.data, ...notes]);
+        setNewNote("");
+      } else {
+        setError(result.error || "Failed to add note");
+      }
+    } catch (err) {
+      setError("An error occurred while submitting data");
+    }
+  };
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-start bg-gray-50 p-8 md:p-24">
+      <div className="w-full max-w-2xl">
+        <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">
+          Buku Tamu (App Router)
+        </h1>
+
+        {/* Form untuk CREATE Data */}
+        <form
+          onSubmit={handleSubmit}
+          className="mb-8 p-6 bg-white rounded-lg shadow-md"
+        >
+          <label
+            htmlFor="note"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            Tinggalkan Pesan:
+          </label>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              id="note"
+              type="text"
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              placeholder="Tulis pesan Anda di sini..."
+              className="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900"
+            />
+            <button
+              type="submit"
+              className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Kirim
+            </button>
+          </div>
+        </form>
+
+        {/* Menampilkan Error */}
+        {error && (
+          <div className="my-4 rounded-md bg-red-50 p-4">
+            <p className="text-sm font-medium text-red-800">{error}</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold text-gray-700">Pesan:</h2>
+
+          {loading ? (
+            <p className="text-gray-500">Memuat pesan...</p>
+          ) : notes.length === 0 ? (
+            <p className="text-gray-500">Belum ada pesan.</p>
+          ) : (
+            <ul className="divide-y divide-gray-200">
+              {notes.map((note) => (
+                <li
+                  key={note._id}
+                  className="py-4 px-2 bg-white shadow-sm my-2 rounded-md"
+                >
+                  <p className="text-gray-800">{note.text}</p>
+                  <span className="text-xs text-gray-500">
+                    {new Date(note.createdAt).toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
