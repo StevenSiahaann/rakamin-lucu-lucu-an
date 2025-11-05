@@ -5,16 +5,16 @@ services:
       args:
         MONGODB_URI: ${MONGODB_URI}
         MONGODB_DB: ${MONGODB_DB}
-    image: stevensiahaan/kelompok3-app:latest
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
-      MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@db:27017/${MONGO_DB_NAME}?authSource=admin
-      MONGODB_DB: ${MONGO_DB_NAME}
+      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_DB: ${MONGODB_DB}
       NODE_ENV: production
       PORT: 3000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app_network
 
@@ -26,26 +26,34 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASS}
       MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
     ports:
-      - "27018:27017"
+      - "27018:27017" # host:container (host akses via localhost:27018)
     volumes:
       - mongodb_data:/data/db
     networks:
       - app_network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' | grep 1 || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   dbui:
     image: mongo-express:latest
     restart: always
     ports:
       - "8081:8081"
     environment:
-      ME_CONFIG_MONGODB_SERVER: db
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASS}
-      ME_CONFIG_MONGODB_AUTH_DATABASE: admin
+      ME_CONFIG_MONGODB_URL: "mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@db:27017/?authSource=admin"
       ME_CONFIG_BASICAUTH_USERNAME: ${ME_USER}
       ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASS}
+      ME_CONFIG_OPTIONS_EDITORTHEME: dracula
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app_network
 

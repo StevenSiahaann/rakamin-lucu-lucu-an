@@ -18,22 +18,18 @@ ENV MONGODB_URI=${MONGODB_URI}
 ENV MONGODB_DB=${MONGODB_DB}
 
 RUN npm run build
-# prune devdependencies dari node modules
 RUN npm prune --omit=dev
 
-# run
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-#hanya copy artefak ke runner
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 
-#user yang jalan (jangan root)
 USER node
 EXPOSE 3000
 CMD ["npm", "start"]
